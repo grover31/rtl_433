@@ -589,8 +589,18 @@ static void sdr_callback(unsigned char *iq_buf, uint32_t len, void *ctx)
     time(&rawtime);
     // choose hop_index as frequency_index, if there are too few hop_times use the last one
     int hop_index = cfg->hop_times > cfg->frequency_index ? cfg->frequency_index : cfg->hop_times - 1;
+	
+	// Hop on event if hop timer = 0 for frequency
     if (cfg->hop_times > 0 && cfg->frequencies > 1
-            && difftime(rawtime, cfg->hop_start_time) > cfg->hop_time[hop_index]) {
+            && (d_events > 0) && cfg->hop_time[hop_index] == 0) {
+#ifndef _WIN32
+        alarm(0); // cancel the watchdog timer
+#endif
+        cfg->hop_now = 1;
+    }
+	
+    if (cfg->hop_times > 0 && cfg->frequencies > 1
+            && difftime(rawtime, cfg->hop_start_time) > cfg->hop_time[hop_index] && cfg->hop_time[hop_index] > 0) {
 #ifndef _WIN32
         alarm(0); // cancel the watchdog timer
 #endif
